@@ -40,17 +40,20 @@ func (this *Msf) Listening(address string) {
 			continue
 		}
 		//调用握手事件
+		log.Println("11111")
 		if this.EventPool.OnHandel(fd, conn) == false {
 			continue
 		}
+		log.Println("2222")
 		this.SessionMaster.SetSession(fd, conn)
 		go this.SocketType.ConnHandle(this,this.SessionMaster.GetSessionById(fd))
 		fd++
 	}
 }
-
+//解包得到数据之后，拿到数据在这里执行
 func (this *Msf) Hook(fd uint32,requestData map[string]string)bool {
 	//调用接收消息事件
+	log.Print(requestData)
 	if this.EventPool.OnMessage(fd, requestData) == false {
 		return false
 	}

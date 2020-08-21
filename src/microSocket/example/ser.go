@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
+	"google.golang.org/grpc"
 	"log"
 	msf "microSocket"
+	"microSocket/pb"
 	"net"
 )
 
@@ -52,15 +55,32 @@ func (this Test) AfterRequest(fd uint32,data map[string]string) bool{
 func (this Test) Hello(fd uint32,data map[string]string) bool {
 	log.Println("收到消息了")
 	log.Println(data)
-	ser.SessionMaster.WriteByid(fd,[]byte("hehehehehehehehe"))
+	ser.SessionMaster.WriteByid(fd,[]byte("我是一个可小i奥的石头"))
 	return true
 }
 
+//protoc --go_out="." --proto_path =./proto test.proto
+//--go_out=plugins=grpc:. --proto_path=./proto test.proto
 
 //----------------------------------------------------------------------------------------------------------------------
+type SearchService struct{}
+func (s *SearchService)Search(ctx context.Context,r *pb.SearchRequest)(*pb.SearchResponse,error){
+	return &pb.SearchResponse{Response: r.GetRequest() + "Server"},nil
+}
+const PORT = "9001"
 func main() {
-	log.SetFlags(log.Lshortfile | log.LstdFlags | log.Llongfile)
-	ser.EventPool.RegisterEvent(&event{})
-	ser.EventPool.RegisterStructFun("test", &Test{})
-	ser.Listening(":8565")
+	//log.SetFlags(log.Lshortfile | log.LstdFlags | log.Llongfile)
+	//log.Print("hah")
+	server := grpc.NewServer();
+	pb.RegisterSearchServiceServer(server,&SearchService{});
+	lis,err := net.Listen("tcp",":"+PORT);
+	if err != nil {
+		log.Fatalf("failed to listen:%v",err);
+	}
+	server.Serve(lis);
+
+
+	//ser.EventPool.RegisterEvent(&event{})
+	//ser.EventPool.RegisterStructFun("test", &Test{})
+	//ser.Listening(":8565")
 }

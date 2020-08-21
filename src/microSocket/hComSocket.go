@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"log"
-	"microSocket/util"
 )
 
 const (
@@ -17,7 +16,7 @@ const (
 type CommSocket struct {
 }
 
-func (this *CommSocket) ConnHandle(msf *Msf, sess *Session) {
+func (s *CommSocket) ConnHandle(msf *Msf, sess *Session) {
 	defer func() {
 		msf.SessionMaster.DelSessionById(sess.Id)
 		//调用断开链接事件
@@ -35,7 +34,7 @@ func (this *CommSocket) ConnHandle(msf *Msf, sess *Session) {
 			return
 		}
 		tempBuff = append(tempBuff, readBuff[:n]...)
-		tempBuff, data, errs = this.Depack(tempBuff)
+		tempBuff, data, errs = s.Depack(tempBuff)
 		if errs != nil {
 			log.Println(errs)
 			return
@@ -45,19 +44,24 @@ func (this *CommSocket) ConnHandle(msf *Msf, sess *Session) {
 			continue
 		}
 		//把请求的到数据转化为map
-		requestData := util.String2Map(string(data))
-		if msf.Hook(sess.Id,requestData) == false {
-			return
-		}
+		log.Print(data)
+
+		//ubook := &pb.ContactBook{};
+		//proto.Unmarshal(data,ubook);
+		//log.Print(ubook);
+		//requestData := util.String2Map(string(data))
+		//if msf.Hook(sess.Id,requestData) == false {
+		//	return
+		//}
 	}
 }
 
-func (this *CommSocket) Pack(message []byte) []byte {
-	return append(append([]byte(CONSTHEADER), this.IntToBytes(len(message))...), message...)
+func (s *CommSocket) Pack(message []byte) []byte {
+	return append(append([]byte(CONSTHEADER), s.IntToBytes(len(message))...), message...)
 }
 
 //解包
-func (this *CommSocket) Depack(buff []byte) ([]byte, []byte, error) {
+func (s *CommSocket) Depack(buff []byte) ([]byte, []byte, error) {
 	length := len(buff)
 	//如果包长小于header 就直接返回 因为接收的数据不完整
 	if length < CONSTHEADERLENGTH+CONSTMLENGTH {
@@ -69,7 +73,7 @@ func (this *CommSocket) Depack(buff []byte) ([]byte, []byte, error) {
 		return []byte{}, nil, errors.New("header is not safe")
 	}
 
-	msgLength := this.BytesToInt(buff[CONSTHEADERLENGTH : CONSTHEADERLENGTH+CONSTMLENGTH])
+	msgLength := s.BytesToInt(buff[CONSTHEADERLENGTH : CONSTHEADERLENGTH+CONSTMLENGTH])
 	if length < CONSTHEADERLENGTH+CONSTMLENGTH+msgLength {
 		return buff, nil, nil
 	}
@@ -79,14 +83,14 @@ func (this *CommSocket) Depack(buff []byte) ([]byte, []byte, error) {
 	return buffs, data, nil
 }
 
-func (this *CommSocket) IntToBytes(n int) []byte {
+func (s *CommSocket) IntToBytes(n int) []byte {
 	x := int32(n)
 	bytesBuffer := bytes.NewBuffer([]byte{})
 	binary.Write(bytesBuffer, binary.BigEndian, x)
 	return bytesBuffer.Bytes()
 }
 
-func (this *CommSocket) BytesToInt(b []byte) int {
+func (s *CommSocket) BytesToInt(b []byte) int {
 	bytesBuffer := bytes.NewBuffer(b)
 	var x int32
 	binary.Read(bytesBuffer, binary.BigEndian, &x)
